@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Presupuestos — Ing. Civil</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Mulish:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f4ef;
+  --paper:#ffffff;
+  --ink:#1a1610;
+  --ink2:#3a3228;
+  --muted:#7a6e60;
+  --faint:#b8ae9e;
+  --border:#ddd5c8;
+  --border2:#c8bc9e;
+  --gold:#b8860b;
+  --gold2:#d4a01a;
+  --gold3:#f0c040;
+  --blue:#1e3a5f;
+  --blue2:#2a4f7c;
+  --green:#1a5c35;
+  --red:#8b2020;
+  --shadow:0 2px 12px rgba(26,22,16,.1);
+  --shadow2:0 8px 32px rgba(26,22,16,.15);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Mulish',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* ── HEADER ── */
+.app-header{background:var(--blue);color:white;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.app-brand{display:flex;align-items:center;gap:14px;}
+.app-brand-icon{width:42px;height:42px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.app-brand h1{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:white;line-height:1.2;}
+.app-brand p{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+.app-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:380px 1fr;gap:0;min-height:calc(100vh - 68px);}
+.panel-left{background:var(--paper);border-right:1px solid var(--border);padding:20px;overflow-y:auto;max-height:calc(100vh - 68px);}
+.panel-right{background:var(--bg);padding:24px;overflow-y:auto;max-height:calc(100vh - 68px);}
+
+/* ── FORM ── */
+.section{margin-bottom:20px;}
+.section-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--blue);border-bottom:2px solid var(--gold);padding-bottom:6px;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.fg label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:6px;color:var(--ink);font-family:'Mulish',sans-serif;font-size:13px;padding:8px 11px;outline:none;transition:border-color .2s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);background:white;}
+textarea{resize:vertical;min-height:60px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border:none;border-radius:6px;font-family:'Mulish',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:6px;}
+.btn-gold{background:var(--gold);color:white;}
+.btn-gold:hover{background:var(--gold2);}
+.btn-blue{background:var(--blue);color:white;}
+.btn-blue:hover{background:var(--blue2);}
+.btn-green{background:var(--green);color:white;}
+.btn-ghost{background:transparent;border:1.5px solid var(--border2);color:var(--ink2);}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red);padding:4px 9px;font-size:11px;}
+.btn-danger:hover{background:var(--red);color:white;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+/* ── CONCEPTO ROW ── */
+.concepto-row{display:grid;grid-template-columns:1fr 80px 100px auto;gap:8px;align-items:end;margin-bottom:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;}
+.concepto-row .fg{margin-bottom:0;}
+
+/* ── PREVIEW ── */
+.preview-wrap{background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow2);overflow:hidden;}
+
+/* ══ PRESUPUESTO IMPRIMIBLE ══ */
+#presupuesto{background:white;padding:40px 48px;font-family:'Mulish',sans-serif;min-height:297mm;}
+
+.pr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid var(--blue);}
+.pr-empresa h2{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--blue);}
+.pr-empresa p{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.7;}
+.pr-empresa .cedula{font-size:11px;color:var(--gold);font-weight:700;margin-top:4px;}
+
+.pr-meta{text-align:right;}
+.pr-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.pr-meta p{font-size:12px;color:var(--muted);line-height:1.8;}
+.pr-meta strong{color:var(--ink);}
+
+.pr-gold-bar{height:4px;background:linear-gradient(90deg,var(--blue),var(--gold),var(--gold3));border-radius:2px;margin-bottom:24px;}
+
+.pr-cliente{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.pr-box{background:#f9f7f4;border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.pr-box-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:8px;}
+.pr-box p{font-size:12px;color:var(--ink2);line-height:1.8;}
+.pr-box strong{color:var(--ink);font-size:14px;}
+
+.pr-obra-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--blue);margin-bottom:6px;}
+.pr-obra-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+
+/* TABLE */
+.pr-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;}
+.pr-table thead th{background:var(--blue);color:white;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;}
+.pr-table thead th:last-child,.pr-table thead th:nth-child(3),.pr-table thead th:nth-child(4){text-align:right;}
+.pr-table tbody tr{border-bottom:1px solid var(--border);}
+.pr-table tbody tr:nth-child(even){background:#faf8f5;}
+.pr-table tbody tr:hover{background:#f5f0e8;}
+.pr-table tbody td{padding:9px 12px;vertical-align:middle;}
+.pr-table tbody td:nth-child(3),.pr-table tbody td:nth-child(4),.pr-table tbody td:nth-child(5){text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;}
+.pr-table tfoot td{padding:9px 12px;font-weight:700;border-top:2px solid var(--border2);}
+.pr-table .subtotal-row td{background:#f0ece4;font-weight:600;}
+.pr-table .total-row td{background:var(--blue);color:white;font-size:14px;}
+.pr-table .total-row td:last-child{font-family:'JetBrains Mono',monospace;font-size:16px;text-align:right;color:var(--gold3);}
+
+/* CONDICIONES */
+.pr-condiciones{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.pr-cond-box{background:#f9f7f4;border-left:3px solid var(--gold);border-radius:4px;padding:12px 14px;}
+.pr-cond-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gold);margin-bottom:6px;}
+.pr-cond-body{font-size:12px;color:var(--ink2);line-height:1.7;}
+
+/* FIRMA */
+.pr-firma{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;padding-top:20px;border-top:1px solid var(--border);}
+.pr-firma-box{text-align:center;}
+.pr-firma-line{border-top:1px solid var(--ink);margin-bottom:6px;}
+.pr-firma-nom{font-size:12px;font-weight:700;color:var(--ink);}
+.pr-firma-rol{font-size:10px;color:var(--muted);}
+
+.pr-footer{text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);font-size:10px;color:var(--faint);}
+
+/* EMPTY */
+.empty-preview{text-align:center;padding:60px 24px;color:var(--faint);}
+.empty-preview .ico{font-size:52px;margin-bottom:12px;}
+.empty-preview p{font-size:14px;font-weight:600;}
+
+/* BADGE */
+.badge-tipo{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.badge-civil{background:rgba(30,58,95,.12);color:var(--blue);}
+.badge-rem{background:rgba(184,134,11,.12);color:var(--gold);}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;}
+  .panel-left,.panel-right{max-height:none;}
+  #presupuesto{padding:24px;}
+  .pr-cliente,.pr-condiciones,.pr-firma{grid-template-columns:1fr;}
+}
+
+@media print{
+  .app-header,.panel-left,.no-print{display:none!important;}
+  .layout{display:block;}
+  .panel-right{padding:0;background:white;}
+  .preview-wrap{border:none;box-shadow:none;border-radius:0;}
+  body{background:white;}
+  #presupuesto{padding:20mm 18mm;}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-brand">
+    <div class="app-brand-icon">📋</div>
+    <div>
+      <h1>Generador de Presupuestos</h1>
+      <p>Obras Civiles & Remodelaciones · Cd. Victoria, Tam.</p>
+    </div>
+  </div>
+  <div class="app-actions no-print">
+    <button class="btn btn-ghost btn-sm" onclick="cargarDemo()">📦 Demo</button>
+    <button class="btn btn-gold btn-sm" onclick="generarPresupuesto()">⚡ Generar</button>
+    <button class="btn btn-blue btn-sm" onclick="window.print()">🖨 Imprimir / PDF</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ══ PANEL IZQUIERDO — FORMULARIO ══ -->
+  <div class="panel-left no-print">
+
+    <!-- DATOS EMPRESA -->
+    <div class="section">
+      <div class="section-title">🏢 Tu empresa</div>
+      <div class="fg"><label>Nombre / Razón social</label><input id="emp-nom" placeholder="Ing. Juan Pérez · Construcción"></div>
+      <div class="grid2">
+        <div class="fg"><label>Cédula profesional</label><input id="emp-ced" placeholder="Céd. 12345678"></div>
+        <div class="fg"><label>Teléfono</label><input id="emp-tel" placeholder="834 XXX XXXX"></div>
+      </div>
+      <div class="fg"><label>Email</label><input id="emp-email" placeholder="correo@empresa.com"></div>
+      <div class="fg"><label>Dirección</label><input id="emp-dir" placeholder="Cd. Victoria, Tamaulipas"></div>
+    </div>
+
+    <!-- DATOS CLIENTE -->
+    <div class="section">
+      <div class="section-title">👤 Cliente</div>
+      <div class="fg"><label>Nombre del cliente</label><input id="cli-nom" placeholder="Nombre completo"></div>
+      <div class="grid2">
+        <div class="fg"><label>Teléfono</label><input id="cli-tel" placeholder="834 XXX XXXX"></div>
+        <div class="fg"><label>Fecha</label><input id="cli-fecha" type="date"></div>
+      </div>
+      <div class="fg"><label>Dirección del cliente</label><input id="cli-dir" placeholder="Colonia, Cd. Victoria"></div>
+    </div>
+
+    <!-- DATOS OBRA -->
+    <div class="section">
+      <div class="section-title">🏗️ Obra / Proyecto</div>
+      <div class="fg"><label>Nombre de la obra</label><input id="obra-nom" placeholder="ej. Construcción de barda perimetral"></div>
+      <div class="fg"><label>Ubicación de la obra</label><input id="obra-ubi" placeholder="ej. Col. Jardines, Cd. Victoria"></div>
+      <div class="grid2">
+        <div class="fg"><label>Tipo de obra</label>
+          <select id="obra-tipo">
+            <option value="civil">Obra civil / vial</option>
+            <option value="rem">Remodelación</option>
+            <option value="casa">Construcción de casa</option>
+            <option value="comercial">Obra comercial</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="fg"><label>Plazo de ejecución</label><input id="obra-plazo" placeholder="ej. 30 días hábiles"></div>
+      </div>
+    </div>
+
+    <!-- CONCEPTOS -->
+    <div class="section">
+      <div class="section-title">📐 Conceptos de trabajo</div>
+      <div id="conceptos-list"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addConcepto()" style="width:100%;margin-top:4px;justify-content:center">＋ Agregar concepto</button>
+    </div>
+
+    <!-- CONDICIONES -->
+    <div class="section">
+      <div class="section-title">📋 Condiciones</div>
+      <div class="fg"><label>Forma de pago</label>
+        <select id="cond-pago">
+          <option>50% anticipo, 50% al terminar</option>
+          <option>30% anticipo, 40% avance, 30% al terminar</option>
+          <option>100% al terminar la obra</option>
+          <option>Pago semanal según avance</option>
+          <option>Personalizado (ver notas)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Validez del presupuesto</label>
+        <select id="cond-validez">
+          <option>15 días naturales</option>
+          <option>30 días naturales</option>
+          <option>45 días naturales</option>
+          <option>60 días naturales</option>
+        </select>
+      </div>
+      <div class="fg"><label>¿Incluye materiales?</label>
+        <select id="cond-mat">
+          <option value="si">Sí incluye materiales</option>
+          <option value="no">No incluye materiales (solo mano de obra)</option>
+          <option value="parcial">Materiales parciales (ver detalle)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Notas / condiciones adicionales</label>
+        <textarea id="cond-notas" placeholder="Ej: El precio no incluye trabajos imprevistos. Cualquier trabajo adicional será presupuestado por separado. Los materiales serán de primera calidad..."></textarea>
+      </div>
+    </div>
+
+    <!-- FACTORES -->
+    <div class="section">
+      <div class="section-title">💰 Factores adicionales</div>
+      <div class="grid2">
+        <div class="fg"><label>IVA (%)</label>
+          <select id="fac-iva">
+            <option value="0">Sin IVA (persona física)</option>
+            <option value="16">16% IVA</option>
+          </select>
+        </div>
+        <div class="fg"><label>Descuento (%)</label><input id="fac-desc" type="number" value="0" min="0" max="50"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:20px">
+      <button class="btn btn-gold" onclick="generarPresupuesto()" style="flex:1;justify-content:center">⚡ Generar presupuesto</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" onclick="limpiar()">🗑 Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="cargarDemo()">📦 Cargar demo</button>
+    </div>
+
+  </div>
+
+  <!-- ══ PANEL DERECHO — PREVIEW ══ -->
+  <div class="panel-right">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px" class="no-print">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--blue)">Vista previa</div>
+      <button class="btn btn-blue btn-sm" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+    </div>
+
+    <div class="preview-wrap">
+      <div id="presupuesto">
+        <div class="empty-preview">
+          <div class="ico">📋</div>
+          <p>Completa el formulario y presiona<br><strong>"Generar presupuesto"</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let conceptos = [];
+let numPresup = 1;
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('cli-fecha').value = new Date().toISOString().split('T')[0];
+  addConcepto();
+  addConcepto();
+  addConcepto();
+});
+
+// ── CONCEPTOS ──
+function addConcepto(desc='',unid='m²',cant='',pu='',tipo='civil'){
+  const id = Date.now() + Math.random();
+  conceptos.push({id,desc,unid,cant,pu,tipo});
+  renderConceptos();
+}
+
+function delConcepto(id){
+  conceptos = conceptos.filter(c=>c.id!==id);
+  renderConceptos();
+}
+
+function renderConceptos(){
+  const w = document.getElementById('conceptos-list');
+  if(!conceptos.length){ w.innerHTML=''; return; }
+  w.innerHTML = conceptos.map(c=>`
+    <div class="concepto-row" data-id="${c.id}">
+      <div>
+        <div class="fg"><label>Descripción</label>
+          <input type="text" value="${c.desc}" placeholder="ej. Guarnición de concreto fc=200" onchange="updConcepto(${c.id},'desc',this.value)">
+        </div>
+        <div style="display:grid;grid-template-columns:80px 1fr 100px 100px auto;gap:6px;margin-top:6px;align-items:end">
+          <div class="fg"><label>Unidad</label>
+            <select onchange="updConcepto(${c.id},'unid',this.value)">
+              ${['ml','m²','m³','ton','kg','pza','lote','hr','jornal'].map(u=>`<option${c.unid===u?' selected':''}>${u}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fg"><label>Descripción corta / nota</label>
+            <input type="text" value="${c.nota||''}" placeholder="nota opcional" onchange="updConcepto(${c.id},'nota',this.value)">
+          </div>
+          <div class="fg"><label>Cantidad</label>
+            <input type="number" value="${c.cant}" placeholder="0" min="0" step="any" onchange="updConcepto(${c.id},'cant',this.value)">
+          </div>
+          <div class="fg"><label>P.U. ($)</label>
+            <input type="number" value="${c.pu}" placeholder="0.00" min="0" step="any" onchange="updConcepto(${c.id},'pu',this.value)">
+          </div>
+          <div class="fg"><label style="opacity:0">x</label>
+            <button class="btn btn-danger" onclick="delConcepto(${c.id})">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function updConcepto(id,field,val){
+  const c = conceptos.find(x=>x.id===id);
+  if(c) c[field]=val;
+}
+
+// ── FORMAT ──
+const fmt = n => '$'+parseFloat(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN = n => parseFloat(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// ── GENERAR ──
+function generarPresupuesto(){
+  // Datos
+  const empNom  = document.getElementById('emp-nom').value  || 'Ingeniería y Construcción';
+  const empCed  = document.getElementById('emp-ced').value  || '';
+  const empTel  = document.getElementById('emp-tel').value  || '';
+  const empEmail= document.getElementById('emp-email').value|| '';
+  const empDir  = document.getElementById('emp-dir').value  || 'Cd. Victoria, Tam.';
+  const cliNom  = document.getElementById('cli-nom').value  || '—';
+  const cliTel  = document.getElementById('cli-tel').value  || '';
+  const cliDir  = document.getElementById('cli-dir').value  || '';
+  const fecha   = document.getElementById('cli-fecha').value|| new Date().toISOString().split('T')[0];
+  const obraNom = document.getElementById('obra-nom').value || 'Proyecto de construcción';
+  const obraUbi = document.getElementById('obra-ubi').value || 'Cd. Victoria, Tam.';
+  const obraTipo= document.getElementById('obra-tipo').value;
+  const obraPlazo=document.getElementById('obra-plazo').value||'A convenir';
+  const condPago= document.getElementById('cond-pago').value;
+  const condVal = document.getElementById('cond-validez').value;
+  const condMat = document.getElementById('cond-mat').value;
+  const condNotas=document.getElementById('cond-notas').value;
+  const pctIva  = parseFloat(document.getElementById('fac-iva').value)||0;
+  const pctDesc = parseFloat(document.getElementById('fac-desc').value)||0;
+
+  const tipoLabel = {civil:'Obra Civil / Vial',rem:'Remodelación',casa:'Construcción de Casa',comercial:'Obra Comercial',otro:'Proyecto'};
+  const matLabel = {si:'Incluye materiales y mano de obra',no:'Solo mano de obra (materiales por el cliente)',parcial:'Materiales parciales (ver notas)'};
+
+  // Calcular subtotal
+  const items = conceptos.filter(c=>c.desc&&parseFloat(c.cant)>0&&parseFloat(c.pu)>0);
+  let subtotal = 0;
+  items.forEach(c=>{ c._imp = parseFloat(c.cant)*parseFloat(c.pu); subtotal+=c._imp; });
+
+  const descuento = subtotal * (pctDesc/100);
+  const base = subtotal - descuento;
+  const iva = base * (pctIva/100);
+  const total = base + iva;
+
+  const numStr = 'PRES-' + fecha.replace(/-/g,'').slice(2) + '-' + String(numPresup).padStart(3,'0');
+
+  // Filas de conceptos
+  const rows = items.length > 0 ? items.map((c,i)=>`
+    <tr>
+      <td style="color:#666;font-family:'JetBrains Mono',monospace;font-size:11px">${i+1}</td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${c.desc}</div>
+        ${c.nota?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${c.nota}</div>`:''}
+      </td>
+      <td>${c.unid}</td>
+      <td>${fmtN(c.cant)}</td>
+      <td>${fmt(c.pu)}</td>
+      <td style="font-weight:700;color:var(--blue)">${fmt(c._imp)}</td>
+    </tr>`) .join('') :
+    `<tr><td colspan="6" style="text-align:center;color:#999;padding:20px">Sin conceptos agregados</td></tr>`;
+
+  const fechaFmt = new Date(fecha+'T12:00:00').toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+
+  document.getElementById('presupuesto').innerHTML = `
+    <div class="pr-top">
+      <div class="pr-empresa">
+        <h2>${empNom}</h2>
+        <p>
+          ${empDir}<br>
+          ${empTel?'Tel: '+empTel+(empEmail?' · ':' '):''}${empEmail||''}
+        </p>
+        ${empCed?`<div class="cedula">📜 ${empCed}</div>`:''}
+      </div>
+      <div class="pr-meta">
+        <div class="pr-num">${numStr}</div>
+        <p>Fecha: <strong>${fechaFmt}</strong></p>
+        <p>Válido: <strong>${condVal}</strong></p>
+        <p>Tipo: <strong>${tipoLabel[obraTipo]||'Proyecto'}</strong></p>
+      </div>
+    </div>
+
+    <div class="pr-gold-bar"></div>
+
+    <div class="pr-cliente">
+      <div class="pr-box">
+        <div class="pr-box-title">📋 Presupuesto para</div>
+        <p><strong>${cliNom}</strong></p>
+        ${cliTel?`<p>Tel: ${cliTel}</p>`:''}
+        ${cliDir?`<p>${cliDir}</p>`:''}
+      </div>
+      <div class="pr-box">
+        <div class="pr-box-title">🏗️ Datos de la obra</div>
+        <p><strong>${obraNom}</strong></p>
+        <p>📍 ${obraUbi}</p>
+        <p>⏱ Plazo: ${obraPlazo}</p>
+        <p>🔧 ${matLabel[condMat]}</p>
+      </div>
+    </div>
+
+    <div class="pr-obra-title">${obraNom}</div>
+    <div class="pr-obra-sub">Desglose de conceptos y precios unitarios</div>
+
+    <table class="pr-table">
+      <thead>
+        <tr>
+          <th style="width:32px">#</th>
+          <th>Concepto / Descripción</th>
+          <th style="width:60px">Unidad</th>
+          <th style="width:80px">Cantidad</th>
+          <th style="width:100px">P.U.</th>
+          <th style="width:110px">Importe</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr class="subtotal-row">
+          <td colspan="5" style="text-align:right">Subtotal</td>
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fmt(subtotal)}</td>
+        </tr>
+        ${pctDesc>0?`<tr class="subtotal-row">
+          <td colspan="5" style="text-align:right;color:var(--green)">Descuento (${pctDesc}%)</td>
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--green)">- ${fmt(descuento)}</td>
+        </tr>`:''}
+        ${pctIva>0?`<tr class="subtotal-row">
+          <td colspan="5" style="text-align:right">IVA (${pctIva}%)</td>
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fmt(iva)}</td>
+        </tr>`:''}
+        <tr class="total-row">
+          <td colspan="5" style="font-family:'Playfair Display',serif;font-size:15px">TOTAL PRESUPUESTADO</td>
+          <td>${fmt(total)}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="pr-condiciones">
+      <div class="pr-cond-box">
+        <div class="pr-cond-title">💳 Forma de pago</div>
+        <div class="pr-cond-body">${condPago}</div>
+      </div>
+      <div class="pr-cond-box">
+        <div class="pr-cond-title">📅 Vigencia y condiciones</div>
+        <div class="pr-cond-body">
+          Presupuesto válido por <strong>${condVal}</strong> a partir de la fecha de emisión.
+          ${pctIva===0?' Precios sin IVA (persona física).':`IVA del ${pctIva}% incluido.`}
+        </div>
+      </div>
+      ${condNotas?`<div class="pr-cond-box" style="grid-column:1/-1">
+        <div class="pr-cond-title">📝 Notas y condiciones adicionales</div>
+        <div class="pr-cond-body">${condNotas.replace(/\n/g,'<br>')}</div>
+      </div>`:''}
+    </div>
+
+    <div class="pr-firma">
+      <div class="pr-firma-box">
+        <div style="height:50px"></div>
+        <div class="pr-firma-line"></div>
+        <div class="pr-firma-nom">${cliNom}</div>
+        <div class="pr-firma-rol">Cliente — Acepta y firma</div>
+      </div>
+      <div class="pr-firma-box">
+        <div style="height:50px"></div>
+        <div class="pr-firma-line"></div>
+        <div class="pr-firma-nom">${empNom}</div>
+        <div class="pr-firma-rol">Contratista${empCed?' · '+empCed:''}</div>
+      </div>
+    </div>
+
+    <div class="pr-footer">
+      Presupuesto generado el ${fechaFmt} · ${empNom} · Cd. Victoria, Tamaulipas<br>
+      Para cualquier aclaración comunicarse al ${empTel||'número de contacto'}
+    </div>`;
+
+  numPresup++;
+  // scroll al preview en móvil
+  document.querySelector('.panel-right').scrollIntoView({behavior:'smooth'});
+}
+
+// ── DEMO ──
+function cargarDemo(){
+  document.getElementById('emp-nom').value='Ing. Carlos Hernández · Construcciones CH';
+  document.getElementById('emp-ced').value='Cédula Prof. 87654321';
+  document.getElementById('emp-tel').value='834 112 3456';
+  document.getElementById('emp-email').value='ch.construcciones@gmail.com';
+  document.getElementById('emp-dir').value='Col. Jardines, Cd. Victoria, Tam.';
+  document.getElementById('cli-nom').value='Familia Martínez González';
+  document.getElementById('cli-tel').value='834 987 6543';
+  document.getElementById('cli-dir').value='Col. Las Palmas, Cd. Victoria, Tam.';
+  document.getElementById('obra-nom').value='Remodelación de cocina y sala';
+  document.getElementById('obra-ubi').value='Col. Las Palmas, Cd. Victoria, Tam.';
+  document.getElementById('obra-tipo').value='rem';
+  document.getElementById('obra-plazo').value='25 días hábiles';
+  document.getElementById('cond-pago').value='50% anticipo, 50% al terminar';
+  document.getElementById('cond-validez').value='30 días naturales';
+  document.getElementById('cond-mat').value='si';
+  document.getElementById('cond-notas').value='El precio incluye materiales de primera calidad. No se incluyen trabajos eléctricos ni sanitarios. Cualquier cambio al proyecto original será presupuestado por separado. El cliente deberá proporcionar acceso al inmueble de lunes a viernes de 8:00 a 17:00 hrs.';
+  document.getElementById('fac-iva').value='0';
+  document.getElementById('fac-desc').value='0';
+
+  conceptos = [];
+  const items = [
+    {desc:'Demolición de muros y retiro de escombro',unid:'m²',cant:'18',pu:'320',nota:'Incl. carga y retiro a banco autorizado'},
+    {desc:'Aplanado y nivelación de muros',unid:'m²',cant:'45',pu:'185',nota:'Mortero cemento-arena 1:5, espesor 2cm'},
+    {desc:'Colocación de piso porcelanato 60×60',unid:'m²',cant:'32',pu:'480',nota:'Incl. material, pegamento y fragua'},
+    {desc:'Pintura vinílica muros y plafón',unid:'m²',cant:'80',pu:'95',nota:'2 manos, incl. sellador y preparación'},
+    {desc:'Instalación de azulejo en cocina',unid:'m²',cant:'14',pu:'420',nota:'Incl. material y accesorio de instalación'},
+    {desc:'Fabricación e instalación de barra cocina',unid:'ml',cant:'3.5',pu:'1800',nota:'Concreto fc=200 con acabado pulido'},
+    {desc:'Mano de obra general / limpieza final',unid:'lote',cant:'1',pu:'3500',nota:''},
+  ];
+  items.forEach(i=>conceptos.push({id:Date.now()+Math.random(),...i,_imp:0}));
+  renderConceptos();
+  generarPresupuesto();
+}
+
+// ── LIMPIAR ──
+function limpiar(){
+  ['emp-nom','emp-ced','emp-tel','emp-email','emp-dir','cli-nom','cli-tel','cli-dir',
+   'obra-nom','obra-ubi','obra-plazo','cond-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fac-desc').value='0';
+  conceptos=[];
+  addConcepto(); addConcepto(); addConcepto();
+  document.getElementById('presupuesto').innerHTML=`
+    <div class="empty-preview"><div class="ico">📋</div>
+    <p>Completa el formulario y presiona<br><strong>"Generar presupuesto"</strong></p></div>`;
+}
+</script>
+</body>
+</html>
